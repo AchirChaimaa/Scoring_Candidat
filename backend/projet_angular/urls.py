@@ -8,5 +8,6 @@ urlpatterns = [
     path('cvparser/', include('cvparser.urls')),
     path('nerapp/', include('nerapp.urls')),
     path('scoring/', include('scoringapp.urls')),
+    path('scoring1/', include('scoringapp1.urls')), 
 
 ]

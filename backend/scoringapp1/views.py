@@ -1,11 +1,9 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from sentence_transformers import SentenceTransformer, util
 import re
-
-# Charger le modèle SentenceTransformer une seule fois
-model = SentenceTransformer('paraphrase-multilingual-mpnet-base-v2')
+import json
+from langchain_ollama import OllamaLLM  # pip install langchain-ollama
 
 # Définir les poids de chaque champ
 FIELD_WEIGHTS = {
@@ -15,6 +13,9 @@ FIELD_WEIGHTS = {
     "soft skills": 0.05,
     "language": 0.05
 }
+
+# Initialiser le LLM local
+llm = OllamaLLM(model="llama3:8b")  # Ollama doit tourner en local
 
 def clean_entities(entities):
     cleaned = {}
@@ -31,13 +32,47 @@ def clean_entities(entities):
             cleaned[k] = text
     return cleaned
 
+def query_llm(cv_clean, offer_clean):
+    prompt = f"""
+Tu es un système expert qui évalue la correspondance entre un CV et une offre d'emploi.
+
+Le CV et l'offre concernent des domaines professionnels précis.  
+Attribue un score entre 0 et 100 qui reflète la pertinence technique et métier.  
+Si les domaines sont très différents (ex : marketing vs télécom), le score doit être proche de 0.
+
+Renvoie uniquement un JSON strict avec :  
+- matching_score en pourcentage (0-100)  
+- détail par champ (education, experience, hard skills, soft skills, language)
+
+Ne fournis aucune explication ni pondération.
+
+CV: {json.dumps(cv_clean, ensure_ascii=False)}  
+Offre: {json.dumps(offer_clean, ensure_ascii=False)}
+"""
+
+    result_text = llm.invoke(prompt)
+
+    # Extraction du JSON entre triple backticks, avec ou sans "json" après ```
+    json_match = re.search(r"```json\s*(\{.*?\})\s*```", result_text, re.DOTALL)
+    if not json_match:
+        json_match = re.search(r"```\s*(\{.*?\})\s*```", result_text, re.DOTALL)
+    if not json_match:
+        # Pas de bloc JSON délimité : tentative brute de parsing
+        try:
+            return json.loads(result_text)
+        except json.JSONDecodeError:
+            raise ValueError(f"Réponse LLM non valide : {result_text}")
+
+    json_str = json_match.group(1)
+    return json.loads(json_str)
+
+
 class MatchingScoreView(APIView):
     def post(self, request):
         try:
             print("==== Données reçues à /scoring/match/ ====")
             print(request.data)
 
-            # === 1. Extraire les données ===
             cv_data_raw = request.data.get("cv")
             offer_data_raw = request.data.get("offer")
 
@@ -47,10 +82,9 @@ class MatchingScoreView(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-            # Supporter liste ou dict pour cv
             cv_data = cv_data_raw[0] if isinstance(cv_data_raw, list) else cv_data_raw
 
-            # Convertir offer en dictionnaire {label: "text"}
+            # Conversion de l'offre
             offer_data_dict = {}
             if isinstance(offer_data_raw, list):
                 for item in offer_data_raw:
@@ -69,32 +103,14 @@ class MatchingScoreView(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-            # === 2. Nettoyage des entités ===
+            # Nettoyage
             cv_clean = clean_entities(cv_data)
-            offer_clean = clean_entities(offer_data_dict)  # Pas besoin de nettoyage supplémentaire
-            print("OFFRE CLEAN:", offer_clean)
-            print("OFFRE CLEAN:", cv_clean)
-            # === 3. Calcul des similarités champ par champ ===
-            similarity_scores = {}
-            total_score = 0.0
+            offer_clean = clean_entities(offer_data_dict)
 
-            for field, weight in FIELD_WEIGHTS.items():
-                cv_text = cv_clean.get(field, "")
-                job_text = offer_clean.get(field, "")
-                if not cv_text or not job_text:
-                    similarity_scores[field] = 0.0
-                    continue
+            # Appel LLM
+            llm_result = query_llm(cv_clean, offer_clean)
 
-                embeddings = model.encode([cv_text, job_text], convert_to_tensor=True)
-                sim_score = util.cos_sim(embeddings[0], embeddings[1]).item()
-                similarity_scores[field] = sim_score
-                total_score += sim_score * weight
-
-            # === 4. Retourner le score final ===
-            return Response({
-                "matching_score": round(total_score * 100, 2),
-                "details": {k: round(v * 100, 2) for k, v in similarity_scores.items()}
-            })
+            return Response(llm_result)
 
         except Exception as e:
             print("Erreur dans MatchingScoreView:", str(e))

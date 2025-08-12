@@ -59,7 +59,7 @@ class ExtractCVView(APIView):
         return text
 
     def extract_entities_with_gemini(self, text):
-        configure(api_key="AIzaSyCl9lEWmLOTmu8WUJ8GuHdDpk0j-U8EJUg")
+        configure(api_key="AIzaSyBqiGQIzdMz3K0sgsb1-PY_EQw0nyahBFY")
 
         model = GenerativeModel('gemini-1.5-flash')
         prompt = f"""
@@ -83,31 +83,36 @@ Voici la liste complète des villes marocaines à considérer comme ville de ré
   "Bni Hadifa", "Amizmiz", "Ouazzane", "Ain Taoujdate", "Beni Ensar", "Tit Mellil", "Lqliaa", "Ait Faska", "Amskroud"
 ]
 
-Entités à extraire :
+Entités à extraire (au format liste simple, **pas de liste de dictionnaires**) :
 - Nom
 - Prénom
-- Expérience
-- Éducation
-- Langues
-- Soft Skills
-- Hard Skills
-- Ville (résidence actuelle ou stabilité)
+- Expérience (liste de chaînes de caractères)
+- Éducation (liste de chaînes de caractères)
+- Langues (liste de chaînes de caractères)
+- Soft Skills (liste de chaînes de caractères)
+- Hard Skills (liste de chaînes de caractères)
+- Ville (une seule chaîne de caractère correspondant à la ville de résidence)
+- Téléphone
+- Email
 
 Contenu du CV :
 {text[:12000]}
 
-Réponds dans un JSON au format suivant :
+Réponds strictement en JSON au format suivant :
 {{
   "Nom": "...",
   "Prénom": "...",
-  "Expérience": [...],
-  "Éducation": [...],
-  "Langues": [...],
-  "SoftSkills": [...],
-  "HardSkills": [...],
+  "experience": ["...", "..."],
+  "education": ["...", "..."],
+  "language": ["...", "..."],
+  "soft skills": ["...", "..."],
+  "hard skills": ["...", "..."],
   "Ville": "..."
+  "Téléphone":"..."
+  "Email":"..."
 }}
 """
+
         try:
             response = model.generate_content(prompt)
             return response.text

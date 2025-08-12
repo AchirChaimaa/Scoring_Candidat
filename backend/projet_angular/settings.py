@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'cvparser',
     'nerapp',
     'scoringapp',
+    'scoringapp1',
     'rest_framework',
     'django.contrib.admin',
     'django.contrib.auth',

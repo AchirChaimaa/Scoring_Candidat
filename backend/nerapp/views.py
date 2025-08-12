@@ -1,5 +1,3 @@
-# nerapp/views.py
-
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -16,4 +14,15 @@ class ExtractJobEntitiesView(APIView):
         raw_ents = predict_entities_from_words(words)
         merged_ents = merge_adjacent_entities(raw_ents)
 
-        return Response({"entities": merged_ents})
+        # Nouvelle structure pour le matching
+        entity_dict = {}
+        for ent in merged_ents:
+            label = ent["label"]
+            value = " ".join(ent["text"]).strip()
+
+            if label in entity_dict:
+                entity_dict[label] += " " + value  # concaténer si plusieurs valeurs pour la même entité
+            else:
+                entity_dict[label] = value
+
+        return Response(entity_dict)
