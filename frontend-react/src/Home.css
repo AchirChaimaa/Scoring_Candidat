@@ -1,0 +1,83 @@
+body {
+    background-color: #f8f9fa;
+    font-family: 'Segoe UI', sans-serif;
+  }
+  
+  .hero-section {
+    background: linear-gradient(to right, #8ecfb3, #ffffff);
+  }
+  
+  .hero-title {
+    font-size: 2.8rem;
+    font-weight: 700;
+    color: #000000;
+  }
+  
+  .hero-subtitle {
+    font-size: 1.25rem;
+    color: #473c3c;
+  }
+  
+  .btn1 {
+    background-color: #5caf8e;
+    color: #ffffff;
+    padding: 10px 10px;
+    border-radius: 16px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: 400px;
+    margin-left: 150px;
+  }
+  
+  .btn1:hover {
+    background-color: #ffffff;
+    border: 2px solid #5caf8e;
+    color: #5caf8e;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    transform: scale(1.05);
+  }
+  
+  .btn1:active {
+    transform: scale(0.98);
+    box-shadow: none;
+  }
+  
+  .drop-zone {
+    border: 2px dashed #6c757d;
+    border-radius: 10px;
+    padding: 30px;
+    text-align: center;
+    color: #6c757d;
+    background-color: white;
+    cursor: pointer;
+    transition: 0.3s;
+    user-select: none;
+    position: relative;
+  }
+  
+  .drop-zone.dragover {
+    border-color: #71d7b6;
+    background-color: #e9f5ff;
+  }
+  
+  .score-box {
+    display: block;
+  }
+  
+  .score-badge {
+    font-size: 1.5rem;
+  }
+  .btn-outline-green {
+    border-color: #5caf8e;
+    color: #5caf8e;
+    background-color: transparent;
+    transition: all 0.3s ease;
+  }
+  
+  .btn-outline-green:hover {
+    background-color: #5caf8e;
+    color: white;
+  }
+  
